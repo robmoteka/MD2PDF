@@ -134,6 +134,34 @@
   height: auto;
 }
 
+/* Mermaid node text: prevent clipping, allow wrapping */
+.mermaid-rendered .node rect,
+.mermaid-rendered .node polygon,
+.mermaid-rendered .node circle,
+.mermaid-rendered .node .label-container {
+  overflow: visible;
+}
+
+.mermaid-rendered .node .label {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.mermaid-rendered .node foreignObject {
+  overflow: visible;
+}
+
+.mermaid-rendered .node foreignObject div {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+  padding: 4px 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .mermaid-error {
   background: var(--error-bg) !important;
   color: var(--error-text) !important;
