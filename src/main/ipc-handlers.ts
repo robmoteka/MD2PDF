@@ -5,11 +5,19 @@ import { exportPdf } from './pdf-export';
 import { FileResult, PdfOptions } from '../shared/types';
 
 export function registerIpcHandlers(win: BrowserWindow): void {
+  function focusForDialog(): void {
+    win.setAlwaysOnTop(true);
+    win.focus();
+    win.setAlwaysOnTop(false);
+  }
+
   ipcMain.handle('file:open', async (): Promise<FileResult | null> => {
+    focusForDialog();
     const result = await dialog.showOpenDialog(win, {
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
       properties: ['openFile'],
-    });
+      modal: true,
+    } as any);
 
     if (result.canceled || result.filePaths.length === 0) {
       return null;
@@ -30,6 +38,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   });
 
   ipcMain.handle('file:save-as', async (_event, content: string): Promise<string | null> => {
+    focusForDialog();
     const result = await dialog.showSaveDialog(win, {
       filters: [{ name: 'Markdown', extensions: ['md'] }],
     });
@@ -43,6 +52,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   });
 
   ipcMain.handle('pdf:export', async (_event, html: string, css: string): Promise<string | null> => {
+    focusForDialog();
     const result = await dialog.showSaveDialog(win, {
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
