@@ -1,0 +1,48 @@
+/* === MD2PDF — Dark Theme === */
+
+:root {
+  --bg: #1e1e2e;
+  --text: #cdd6f4;
+  --text-muted: #a6adc8;
+  --heading: #ffffff;
+  --border: #45475a;
+  --accent: #89b4fa;
+  --toolbar-bg: #181825;
+  --btn-bg: #313244;
+  --btn-hover: #45475a;
+  --code-bg: #313244;
+  --blockquote-bg: #1e1e2e;
+  --table-header-bg: #313244;
+  --table-stripe: #232336;
+  --error-bg: #3b1e1e;
+  --error-text: #f38ba8;
+  --error-border: #6b2e2e;
+}
+
+body.dark {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body.dark .cm-editor {
+  background: var(--bg);
+}
+
+body.dark .cm-editor .cm-gutters {
+  background: var(--toolbar-bg);
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+}
+
+body.dark .cm-editor .cm-content {
+  color: var(--text);
+  caret-color: var(--accent);
+}
+
+body.dark .cm-editor .cm-activeLine {
+  background: rgba(137, 180, 250, 0.08);
+}
+
+body.dark .cm-editor .cm-selectionBackground {
+  background: rgba(137, 180, 250, 0.2) !important;
+}

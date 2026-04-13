@@ -1,0 +1,25 @@
+/* === MD2PDF — Light Theme === */
+
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --heading: #111111;
+  --border: #e0e0e0;
+  --accent: #4a9eff;
+  --toolbar-bg: #f8f9fa;
+  --btn-bg: #ffffff;
+  --btn-hover: #e8ecf0;
+  --code-bg: #f5f6f8;
+  --blockquote-bg: #f8f9fa;
+  --table-header-bg: #f0f1f3;
+  --table-stripe: #fafbfc;
+  --error-bg: #fff0f0;
+  --error-text: #cc0000;
+  --error-border: #ffcccc;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}

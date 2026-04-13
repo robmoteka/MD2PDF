@@ -1,0 +1,21 @@
+appId: com.md2pdf.app
+productName: MD2PDF
+directories:
+  output: release
+linux:
+  target:
+  - target: AppImage
+    arch:
+    - x64
+  category: Office
+  icon: assets/icons
+  synopsis: "Edytor Markdown z podglądem, Mermaid i eksportem PDF"
+files:
+- dist/**/*
+- assets/**/*
+- src/renderer/index.html
+- node_modules/**/*
+- "!node_modules/.cache"
+- "!**/*.ts"
+- "!**/*.map"
+asar: true
