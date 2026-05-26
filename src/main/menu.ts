@@ -33,6 +33,11 @@ export function createMenu(win: BrowserWindow): void {
           accelerator: 'CmdOrCtrl+E',
           click: () => sendAction(win, 'export-pdf'),
         },
+        {
+          label: 'Eksportuj wszystkie do PDF...',
+          accelerator: 'CmdOrCtrl+Shift+E',
+          click: () => sendAction(win, 'export-all'),
+        },
         { type: 'separator' },
         { label: 'Zamknij', role: 'quit' },
       ],

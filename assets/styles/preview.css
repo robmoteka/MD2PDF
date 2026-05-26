@@ -129,9 +129,22 @@
   text-align: center;
 }
 
+/* Allow SVG to show content that slightly exceeds its viewBox
+   (Mermaid 10 sets overflow:hidden inline — we override it) */
 .mermaid-rendered svg {
   max-width: 100%;
   height: auto;
+  overflow: visible !important;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Subgraph / cluster: light gray instead of Mermaid's default yellow.
+   CSS fallback in case themeVariables didn't apply via JS. */
+.mermaid-rendered .cluster rect,
+.mermaid-rendered .cluster polygon {
+  fill: #efefef !important;
+  stroke: #aaaaaa !important;
 }
 
 /* Mermaid node text: prevent clipping, allow wrapping */

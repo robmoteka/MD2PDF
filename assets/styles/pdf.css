@@ -10,7 +10,7 @@
 }
 
 .pdf-body h1 { font-size: 1.8em; border-bottom: 2px solid #ddd; padding-bottom: 0.3em; }
-.pdf-body h2 { font-size: 1.4em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; }
+.pdf-body h2 { font-size: 1.4em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; break-before: page; page-break-before: always; }
 .pdf-body h3 { font-size: 1.2em; }
 
 .pdf-body pre {
@@ -66,6 +66,16 @@
 
 .pdf-body .mermaid-rendered svg {
   max-width: 100%;
+  overflow: visible !important;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Subgraph / cluster: light gray (matches preview theme) */
+.pdf-body .mermaid-rendered .cluster rect,
+.pdf-body .mermaid-rendered .cluster polygon {
+  fill: #efefef !important;
+  stroke: #aaaaaa !important;
 }
 
 /* avoid page break inside code blocks and diagrams */
@@ -73,4 +83,10 @@
 .pdf-body .mermaid-rendered,
 .pdf-body table {
   page-break-inside: avoid;
+}
+
+/* Page break przed sekcją z diagramem Mermaid */
+.diagram-page-break {
+  break-before: page;
+  page-break-before: always;
 }

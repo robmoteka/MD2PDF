@@ -19,6 +19,11 @@ Desktopowy edytor Markdown dla Linuxa z podglądem na żywo, renderowaniem diagr
 - npm >= 9
 - Linux (x64)
 
+## Uwagi dla Linux/AppImage
+
+- Aplikacja przy starcie na Linuksie automatycznie ustawia Chromium flags: `--no-sandbox` oraz `--disable-setuid-sandbox`.
+- Powód: w wielu środowiskach AppImage nie może użyć `chrome-sandbox` z wymaganym `root:root` i trybem `4755`, co powoduje błąd startu.
+
 ## Instalacja
 
 ```bash

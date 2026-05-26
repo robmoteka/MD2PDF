@@ -32,10 +32,10 @@ ${html}
       pageSize: 'A4',
       margins: {
         marginType: 'custom',
-        top: 1.5,
-        bottom: 1.5,
-        left: 1.5,
-        right: 1.5,
+        top: 0.39,    // ~1.0 cm
+        bottom: 0.39, // ~1.0 cm
+        left: 0.39,   // ~1.0 cm
+        right: 0.39,  // ~1.0 cm
       },
     });
 

@@ -18,4 +18,17 @@ export interface FileResult {
   content: string;
 }
 
-export type MenuAction = 'new' | 'open' | 'save' | 'save-as' | 'export-pdf' | 'toggle-theme';
+export interface ExportAllItem {
+  html: string;
+  css: string;
+  baseName: string; // filename without extension, used as output PDF name
+}
+
+export interface ExportAllResult {
+  baseName: string;
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+}
+
+export type MenuAction = 'new' | 'open' | 'save' | 'save-as' | 'export-pdf' | 'export-all' | 'toggle-theme';
