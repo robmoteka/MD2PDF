@@ -11,7 +11,9 @@
     "start": "npm run build && electron . --no-sandbox",
     "dev": "npm run build && electron . --no-sandbox",
     "pack": "npm run build && electron-builder --linux AppImage",
-    "md2pdf": "node dist/cli/cli.js"
+    "md2pdf": "node dist/cli/cli.js",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "postinstall": "git submodule update --init --recursive && npm --prefix vendor/laneflow/impl install && npm --prefix vendor/laneflow/impl run build && npm --prefix vendor/laneflow/impl-render install && npm --prefix vendor/laneflow/impl-render run build"
   },
   "author": "",
   "license": "MIT",
@@ -21,6 +23,7 @@
     "electron": "^32.0.0",
     "electron-builder": "^24.9.0",
     "esbuild": "^0.28.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.3.0"
   },
   "dependencies": {
@@ -29,6 +32,8 @@
     "@codemirror/language-data": "^6.3.0",
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.23.0",
+    "@laneflow/parser": "file:vendor/laneflow/impl",
+    "@laneflow/renderer": "file:vendor/laneflow/impl-render",
     "codemirror": "^6.0.1",
     "markdown-it": "^14.0.0",
     "mermaid": "^10.7.0",
