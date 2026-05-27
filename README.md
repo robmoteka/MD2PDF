@@ -1,17 +1,19 @@
 # MD2PDF
 
 Desktopowy edytor Markdown dla Linuxa z podglądem na żywo, renderowaniem diagramów Mermaid i eksportem do PDF.
+Posiada również **CLI** do konwersji wsadowej — działa bez GUI, nadaje się do cron i pipeline CI/CD.
 
 ## Funkcje
 
 - **Edytor Markdown** — CodeMirror 6 z podświetlaniem składni, numeracją linii i historią zmian
 - **Podgląd na żywo** — split-view z odświeżaniem w czasie rzeczywistym
+- **Auto-reload** — automatyczne przeładowanie pliku gdy zostanie zmieniony zewnętrznie (niezapisane zmiany są chronione)
 - **Diagramy Mermaid** — flowchart, sequence, class, gantt, pie i inne — renderowane do SVG
-- **Eksport PDF** — generowanie PDF z osadzonymi stylami i diagramami (A4, konfigurowalne marginesy)
+- **Eksport PDF** — generowanie PDF z osadzonymi stylami i diagramami (A4, 1 cm marginesy)
+- **Zakładki** — praca na wielu plikach jednocześnie
 - **Motywy** — jasny i ciemny motyw interfejsu
-- **Otwieranie i zapis plików** — praca na lokalnych plikach `.md`
-- **Przeciągany splitter** — regulowana szerokość edytora i podglądu
 - **AppImage** — gotowa dystrybucja dla Linuxa
+- **CLI** — konwersja pliku lub całego katalogu do PDF bez otwierania aplikacji
 
 ## Wymagania
 
@@ -19,51 +21,53 @@ Desktopowy edytor Markdown dla Linuxa z podglądem na żywo, renderowaniem diagr
 - npm >= 9
 - Linux (x64)
 
-## Uwagi dla Linux/AppImage
-
-- Aplikacja przy starcie na Linuksie automatycznie ustawia Chromium flags: `--no-sandbox` oraz `--disable-setuid-sandbox`.
-- Powód: w wielu środowiskach AppImage nie może użyć `chrome-sandbox` z wymaganym `root:root` i trybem `4755`, co powoduje błąd startu.
-
 ## Instalacja
 
 ```bash
 git clone <repo-url>
 cd MD2PDF
 npm install
+npm run build
 ```
 
-## Uruchomienie
+---
+
+## Aplikacja desktopowa
+
+### Uruchomienie
 
 ```bash
 npm start
 ```
 
-## Budowanie AppImage
+### Skróty klawiaturowe
 
-```bash
-npm run pack
-```
+| Skrót            | Akcja                   |
+|------------------|-------------------------|
+| `Ctrl+N`         | Nowy dokument           |
+| `Ctrl+O`         | Otwórz plik             |
+| `Ctrl+S`         | Zapisz                  |
+| `Ctrl+Shift+S`   | Zapisz jako...          |
+| `Ctrl+E`         | Eksportuj do PDF        |
+| `Ctrl+Shift+E`   | Eksportuj wszystkie PDF |
+| `Ctrl+T`         | Przełącz motyw          |
+| `Ctrl+Z`         | Cofnij                  |
+| `Ctrl+Shift+Z`   | Ponów                   |
+| `Ctrl++`         | Powiększ                |
+| `Ctrl+-`         | Pomniejsz               |
 
-Plik `.AppImage` zostanie zapisany w katalogu `release/`.
+### Auto-reload
 
-## Skróty klawiaturowe
+Gdy plik otwarty w zakładce zostanie zmieniony przez inny edytor lub narzędzie zewnętrzne,
+aplikacja automatycznie przeładuje jego zawartość. W pasku statusu pojawi się komunikat
+**„Przeładowano z dysku"**.
 
-| Skrót            | Akcja                |
-|------------------|----------------------|
-| `Ctrl+N`         | Nowy dokument        |
-| `Ctrl+O`         | Otwórz plik          |
-| `Ctrl+S`         | Zapisz               |
-| `Ctrl+Shift+S`   | Zapisz jako...       |
-| `Ctrl+E`         | Eksportuj do PDF     |
-| `Ctrl+T`         | Przełącz motyw       |
-| `Ctrl+Z`         | Cofnij               |
-| `Ctrl+Shift+Z`   | Ponów                |
-| `Ctrl++`         | Powiększ             |
-| `Ctrl+-`         | Pomniejsz            |
+Jeśli zakładka ma niezapisane zmiany — plik **nie zostanie** nadpisany.
+Zamiast tego pojawi się ostrzeżenie **„⚠ Plik zmieniony na dysku (niezapisane zmiany)"**.
 
-## Diagramy Mermaid
+### Diagramy Mermaid
 
-Bloki kodu z językiem `mermaid` są automatycznie renderowane do SVG zarówno w podglądzie, jak i w eksporcie PDF:
+Bloki kodu z językiem `mermaid` są automatycznie renderowane do SVG w podglądzie i PDF:
 
 ````markdown
 ```mermaid
@@ -74,31 +78,121 @@ graph TD
 ```
 ````
 
-Obsługiwane typy diagramów: flowchart, sequence, class, state, gantt, pie, ER, journey i inne wspierane przez Mermaid.js.
+Obsługiwane typy: flowchart, sequence, class, state, gantt, pie, ER, journey i inne.
+
+> **Uwaga:** Unikaj typograficznych cudzysłowów (`„"`, `""`) wewnątrz etykiet węzłów —
+> parser Mermaid traktuje je jako specjalne tokeny. Używaj zwykłych cudzysłowów ASCII lub apostrofów.
+
+### Formatowanie PDF
+
+Każdy nagłówek `##` zaczyna nową stronę PDF, co ułatwia nawigację w długich dokumentach.
+
+---
+
+## CLI — konwersja bez GUI
+
+CLI generuje PDF bezpośrednio z terminala, bez otwierania aplikacji.
+Nadaje się do automatyzacji: cron, skrypty, CI/CD.
+
+### Budowanie CLI
+
+```bash
+npm run build:cli
+# lub razem z całą aplikacją:
+npm run build
+```
+
+### Użycie
+
+```bash
+# Pojedynczy plik → plik.pdf obok pliku wejściowego
+node dist/cli/cli.js dokument.md
+
+# Pojedynczy plik → wskazany plik wyjściowy
+node dist/cli/cli.js dokument.md --out /tmp/dokument.pdf
+
+# Cały katalog → pliki PDF obok plików .md
+node dist/cli/cli.js /moje/notatki/
+
+# Cały katalog → pliki PDF w innym katalogu
+node dist/cli/cli.js /moje/notatki/ --out /pdfs/
+
+# Pomoc
+node dist/cli/cli.js --help
+```
+
+Skrót przez npm:
+```bash
+npm run md2pdf -- dokument.md
+```
+
+### Opcje
+
+| Opcja | Opis |
+|-------|------|
+| `--out <ścieżka>`, `-o <ścieżka>` | Plik wyjściowy lub katalog docelowy |
+| `--help`, `-h` | Pokaż pomoc |
+
+### Użycie w cron
+
+```bash
+crontab -e
+```
+
+```cron
+# Co noc o 2:00 — konwertuj wszystkie notatki do /pdfs/
+0 2 * * * node /home/robert/1_DEV/TOOLS/MD2PDF/dist/cli/cli.js /moje/notatki/ --out /pdfs/
+
+# Co godzinę — aktualizuj jeden raport
+0 * * * * node /home/robert/1_DEV/TOOLS/MD2PDF/dist/cli/cli.js /raporty/raport.md
+```
+
+CLI nie wymaga środowiska graficznego (Xvfb, DISPLAY itp.) — Puppeteer uruchamia Chromium w trybie headless.
+
+---
+
+## Budowanie AppImage
+
+```bash
+npm run pack
+```
+
+Plik `.AppImage` zostanie zapisany w katalogu `release/`.
+
+## Uwagi dla Linux/AppImage
+
+Aplikacja automatycznie ustawia flagi Chromium: `--no-sandbox` i `--disable-setuid-sandbox`,
+ponieważ w środowiskach AppImage binarne `chrome-sandbox` wymaga `root:root 4755`, co nie zawsze jest dostępne.
+
+---
 
 ## Struktura projektu
 
 ```
 MD2PDF/
 ├── src/
-│   ├── main/          # proces główny Electron (okno, menu, pliki, PDF)
+│   ├── main/          # proces główny Electron (okno, menu, pliki, PDF, file watcher)
 │   ├── preload/       # bezpieczne API (contextBridge)
-│   ├── renderer/      # UI: edytor, podgląd, stan dokumentu
+│   ├── renderer/      # UI: edytor, podgląd, zakładki, auto-reload
+│   ├── cli/           # CLI: konwersja Markdown → PDF bez GUI (Puppeteer)
 │   └── shared/        # wspólne typy TypeScript
 ├── assets/styles/     # CSS: layout, podgląd, PDF, motywy
-├── test-docs/         # przykładowe dokumenty testowe
 └── electron-builder.yml
 ```
 
 ## Stack technologiczny
 
-- **Electron** — powłoka desktopowa
-- **TypeScript** — język główny
-- **CodeMirror 6** — edytor tekstu
-- **markdown-it** — parser Markdown
-- **mermaid.js** — renderowanie diagramów
-- **esbuild** — bundler renderera
-- **electron-builder** — pakowanie AppImage
+| Warstwa | Technologia |
+|---------|-------------|
+| Powłoka desktopowa | Electron |
+| Język | TypeScript |
+| Edytor | CodeMirror 6 |
+| Parser Markdown | markdown-it |
+| Diagramy | mermaid.js |
+| PDF (GUI) | Electron `printToPDF` |
+| PDF (CLI) | Puppeteer (headless Chromium) |
+| Bundler renderera | esbuild |
+| Pakowanie | electron-builder |
 
 ## Licencja
 
