@@ -13,7 +13,7 @@
  * so all ESM imports must be dynamic. Modules are cached after first load.
  */
 
-import type { ParseResult } from '@laneflow/parser';
+import type { ParseResult, Document } from '@laneflow/parser';
 import type { RenderOptions } from '@laneflow/renderer';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -30,24 +30,25 @@ export interface LaneflowRenderOptions {
 
 interface LazyModules {
   parse: (source: string) => ParseResult;
-  renderToSvg: (input: unknown, options?: RenderOptions) => string;
+  renderToSvg: (input: string | Document, options?: RenderOptions) => string;
 }
 
 let _modules: LazyModules | null = null;
 
 async function getModules(): Promise<LazyModules> {
-  if (_modules) return _modules;
+  if (_modules !== null) return _modules;
 
   const [parserMod, rendererMod] = await Promise.all([
     import('@laneflow/parser'),
     import('@laneflow/renderer'),
   ]);
 
-  _modules = {
+  const loaded: LazyModules = {
     parse: parserMod.parse,
     renderToSvg: rendererMod.renderToSvg,
   };
-  return _modules;
+  _modules = loaded;
+  return loaded;
 }
 
 // ─── Info-string parser ───────────────────────────────────────────────────────
