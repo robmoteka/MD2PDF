@@ -35,12 +35,20 @@ interface LazyModules {
 
 let _modules: LazyModules | null = null;
 
+// Real ESM dynamic import that survives TypeScript's CJS transpile.
+// `import(...)` in a "module": "commonjs" file gets rewritten to `require(...)`,
+// which fails for ESM-only packages (no "require" condition in their exports).
+// Hiding the import() behind `new Function` keeps it as a native ESM import.
+const esmImport = new Function('specifier', 'return import(specifier)') as <T = unknown>(
+  specifier: string,
+) => Promise<T>;
+
 async function getModules(): Promise<LazyModules> {
   if (_modules !== null) return _modules;
 
   const [parserMod, rendererMod] = await Promise.all([
-    import('@laneflow/parser'),
-    import('@laneflow/renderer'),
+    esmImport<typeof import('@laneflow/parser')>('@laneflow/parser'),
+    esmImport<typeof import('@laneflow/renderer')>('@laneflow/renderer'),
   ]);
 
   const loaded: LazyModules = {
