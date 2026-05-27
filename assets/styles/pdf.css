@@ -85,8 +85,34 @@
   page-break-inside: avoid;
 }
 
-/* Page break przed sekcją z diagramem Mermaid */
+/* Page break przed sekcją z diagramem Mermaid lub LaneFlow */
 .diagram-page-break {
   break-before: page;
   page-break-before: always;
+}
+
+/* --- LaneFlow --- */
+.pdf-body .laneflow-rendered {
+  text-align: center;
+  page-break-inside: avoid;
+  margin: 1em 0;
+}
+
+.pdf-body .laneflow-rendered svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.pdf-body .laneflow-error {
+  background: #fff3f3;
+  color: #b00000;
+  border: 1px solid #f5b8b8;
+  padding: 12px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  page-break-inside: avoid;
 }

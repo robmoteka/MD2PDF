@@ -9,6 +9,7 @@ Posiada również **CLI** do konwersji wsadowej — działa bez GUI, nadaje się
 - **Podgląd na żywo** — split-view z odświeżaniem w czasie rzeczywistym
 - **Auto-reload** — automatyczne przeładowanie pliku gdy zostanie zmieniony zewnętrznie (niezapisane zmiany są chronione)
 - **Diagramy Mermaid** — flowchart, sequence, class, gantt, pie i inne — renderowane do SVG
+- **Diagramy LaneFlow** — swimlane diagrams z wieloma torami, bramkami i przepływem wiadomości — renderowane do inline SVG
 - **Eksport PDF** — generowanie PDF z osadzonymi stylami i diagramami (A4, 1 cm marginesy)
 - **Zakładki** — praca na wielu plikach jednocześnie
 - **Motywy** — jasny i ciemny motyw interfejsu
@@ -26,9 +27,15 @@ Posiada również **CLI** do konwersji wsadowej — działa bez GUI, nadaje się
 ```bash
 git clone <repo-url>
 cd MD2PDF
-npm install
+git submodule update --init --recursive   # pobiera vendor/laneflow
+npm install                               # postinstall buduje oba pakiety laneflow
 npm run build
 ```
+
+> **Uwaga:** `vendor/laneflow` to git submoduł. Przy klonowaniu z flagą `--recurse-submodules`
+> lub po wykonaniu `git submodule update --init --recursive` submoduł jest pobierany automatycznie.
+> `npm install` uruchamia `postinstall`, który buduje `@laneflow/parser` i `@laneflow/renderer`.
+> Bez tego kroku diagramy LaneFlow nie będą renderowane.
 
 ---
 
