@@ -1,4 +1,4 @@
-import { FileResult, ExportAllItem, ExportAllResult, MenuAction } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 
 declare global {
   interface Window {
@@ -15,6 +15,8 @@ declare global {
       watchFile: (filePath: string) => Promise<void>;
       unwatchFile: (filePath: string) => Promise<void>;
       onFileChanged: (callback: (filePath: string) => void) => void;
+      // LaneFlow diagram rendering (delegated to main process / Node)
+      renderLaneflow: (req: LaneflowRenderRequest) => Promise<LaneflowRenderResponse>;
     };
   }
 }

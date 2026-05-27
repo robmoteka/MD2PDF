@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { FileResult, ExportAllItem, ExportAllResult, MenuAction } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 
 contextBridge.exposeInMainWorld('api', {
   // File operations
@@ -35,4 +35,8 @@ contextBridge.exposeInMainWorld('api', {
   onFileChanged: (callback: (filePath: string) => void): void => {
     ipcRenderer.on('file:changed', (_event, filePath: string) => callback(filePath));
   },
+
+  // LaneFlow diagram rendering (delegated to main process / Node)
+  renderLaneflow: (req: LaneflowRenderRequest): Promise<LaneflowRenderResponse> =>
+    ipcRenderer.invoke('laneflow:render', req),
 });

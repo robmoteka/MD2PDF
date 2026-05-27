@@ -32,3 +32,19 @@ export interface ExportAllResult {
 }
 
 export type MenuAction = 'new' | 'open' | 'save' | 'save-as' | 'export-pdf' | 'export-all' | 'toggle-theme';
+
+// ─── LaneFlow IPC ─────────────────────────────────────────────────────────────
+
+export type LaneflowThemeIpc = 'light' | 'dark';
+export type LaneflowDirectionIpc = 'TB' | 'LR';
+
+export interface LaneflowRenderRequest {
+  source: string;
+  theme: LaneflowThemeIpc;
+  direction?: LaneflowDirectionIpc;
+}
+
+/** The IPC response is always an HTML snippet: success → rendered SVG div, error → error pre. */
+export interface LaneflowRenderResponse {
+  html: string;
+}
