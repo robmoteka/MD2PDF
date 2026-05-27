@@ -14,31 +14,42 @@ import * as path from 'path';
 import * as os from 'os';
 import puppeteer from 'puppeteer';
 import MarkdownIt from 'markdown-it';
+import { renderLaneflowFence, parseLaneflowInfo } from '../shared/laneflow.js';
+import type { LaneflowTheme } from '../shared/laneflow.js';
 
 // ─── Arg parsing ──────────────────────────────────────────────────────────────
 
-function parseArgs(argv: string[]): { input: string; out: string | null; help: boolean } {
+function parseArgs(argv: string[]): { input: string; out: string | null; help: boolean; theme: LaneflowTheme } {
   const args = argv.slice(2);
   let input = '';
   let out: string | null = null;
   let help = false;
+  let theme: LaneflowTheme = 'light';
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--help' || args[i] === '-h') {
       help = true;
     } else if (args[i] === '--out' || args[i] === '-o') {
       out = args[++i] ?? null;
+    } else if (args[i] === '--theme') {
+      const val = args[++i];
+      if (val === 'dark' || val === 'light') {
+        theme = val;
+      } else {
+        console.error(`Błąd: nieznany motyw "${val}". Dozwolone: light, dark.`);
+        process.exit(1);
+      }
     } else if (!input) {
       input = args[i];
     }
   }
 
-  return { input, out, help };
+  return { input, out, help, theme };
 }
 
 function printHelp(): void {
   console.log(`
-MD2PDF CLI — konwertuje Markdown do PDF (z obsługą diagramów Mermaid)
+MD2PDF CLI — konwertuje Markdown do PDF (z obsługą diagramów Mermaid i LaneFlow)
 
 Użycie:
   node dist/cli/cli.js <wejście> [opcje]
@@ -49,11 +60,13 @@ Argumenty:
 Opcje:
   --out, -o <ścieżka>   Plik wyjściowy (.pdf) lub katalog wyjściowy
                          Domyślnie: obok pliku wejściowego
+  --theme <motyw>       Motyw dla diagramów LaneFlow: light (domyślnie) lub dark
   --help, -h            Pokaż tę pomoc
 
 Przykłady:
   node dist/cli/cli.js dokument.md
   node dist/cli/cli.js dokument.md --out /tmp/dokument.pdf
+  node dist/cli/cli.js dokument.md --theme dark
   node dist/cli/cli.js /moje/notatki/
   node dist/cli/cli.js /moje/notatki/ --out /pdfs/
 `);
@@ -123,7 +136,22 @@ function resolveOutputPath(inputPath: string, out: string | null, isDir: boolean
 
 // ─── Markdown rendering ───────────────────────────────────────────────────────
 
-function buildMarkdownRenderer(): MarkdownIt {
+interface LaneflowPending {
+  id: number;
+  source: string;
+  direction?: import('../shared/laneflow.js').LaneflowDirection;
+}
+
+interface MarkdownRenderer {
+  md: MarkdownIt;
+  /** Returns LaneFlow blocks collected during the last md.render() call. */
+  getPending: () => LaneflowPending[];
+}
+
+function buildMarkdownRenderer(): MarkdownRenderer {
+  const pending: LaneflowPending[] = [];
+  let counter = 0;
+
   const md = new MarkdownIt({
     html: true,
     linkify: true,
@@ -131,11 +159,21 @@ function buildMarkdownRenderer(): MarkdownIt {
     breaks: false,
   });
 
-  // Obsługa bloków mermaid (ta sama logika co preview.ts)
   const defaultFence = md.renderer.rules.fence!.bind(md.renderer.rules);
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const token = tokens[idx];
-    if (token.info.trim().toLowerCase() === 'mermaid') {
+    const info = token.info.trim();
+    const lang = info.split(/\s+/)[0].toLowerCase();
+
+    if (lang === 'laneflow') {
+      const id = counter++;
+      const { direction } = parseLaneflowInfo(info);
+      pending.push({ id, source: token.content, direction });
+      // Placeholder replaced asynchronously after md.render()
+      return `<div class="laneflow-placeholder" data-laneflow-id="${id}"></div>`;
+    }
+
+    if (lang === 'mermaid') {
       const escaped = token.content
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -143,10 +181,43 @@ function buildMarkdownRenderer(): MarkdownIt {
         .replace(/"/g, '&quot;');
       return `<div class="mermaid-container"><pre class="mermaid">${escaped}</pre></div>`;
     }
+
     return defaultFence(tokens, idx, options, env, self);
   };
 
-  return md;
+  return {
+    md,
+    getPending: () => pending,
+  };
+}
+
+/**
+ * Replace all laneflow placeholders in bodyHtml with rendered SVG (or error blocks).
+ * LaneFlow SVG is pre-rendered in Node — no browser-side script needed.
+ */
+async function resolveLaneflowPlaceholders(
+  bodyHtml: string,
+  pending: LaneflowPending[],
+  theme: LaneflowTheme,
+): Promise<string> {
+  if (pending.length === 0) return bodyHtml;
+
+  // Render all diagrams concurrently
+  const rendered = await Promise.all(
+    pending.map(async p => ({
+      id: p.id,
+      html: await renderLaneflowFence(p.source, { theme, direction: p.direction }),
+    })),
+  );
+
+  let result = bodyHtml;
+  for (const { id, html } of rendered) {
+    result = result.replace(
+      `<div class="laneflow-placeholder" data-laneflow-id="${id}"></div>`,
+      html,
+    );
+  }
+  return result;
 }
 
 // ─── CSS loading ──────────────────────────────────────────────────────────────
@@ -224,9 +295,15 @@ ${bodyHtml}
 
 // ─── PDF generation ───────────────────────────────────────────────────────────
 
-async function convertFile(job: ConvertJob, css: string, md: MarkdownIt): Promise<void> {
+async function convertFile(
+  job: ConvertJob,
+  css: string,
+  renderer: MarkdownRenderer,
+  theme: LaneflowTheme,
+): Promise<void> {
   const markdown = fs.readFileSync(job.inputPath, 'utf-8');
-  const bodyHtml = md.render(markdown);
+  const rawBodyHtml = renderer.md.render(markdown);
+  const bodyHtml = await resolveLaneflowPlaceholders(rawBodyHtml, renderer.getPending(), theme);
   const fullHtml = buildFullHtml(bodyHtml, css);
 
   // Zapisz do pliku tymczasowego (Puppeteer wymaga file:// dla lokalnych zasobów)
@@ -264,7 +341,7 @@ async function convertFile(job: ConvertJob, css: string, md: MarkdownIt): Promis
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  const { input, out, help } = parseArgs(process.argv);
+  const { input, out, help, theme } = parseArgs(process.argv);
 
   if (help || !input) {
     printHelp();
@@ -280,14 +357,15 @@ async function main(): Promise<void> {
   }
 
   const css = loadCss();
-  const md = buildMarkdownRenderer();
   let failed = 0;
 
   for (const job of jobs) {
     const rel = path.relative(process.cwd(), job.inputPath);
     process.stdout.write(`  Konwertuję: ${rel} → ${path.relative(process.cwd(), job.outputPath)} ... `);
     try {
-      await convertFile(job, css, md);
+      // Fresh renderer per file — pending list must be reset between documents
+      const renderer = buildMarkdownRenderer();
+      await convertFile(job, css, renderer, theme);
       console.log('✓');
     } catch (err) {
       console.log(`✗ ${(err as Error).message}`);

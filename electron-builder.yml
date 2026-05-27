@@ -19,3 +19,10 @@ files:
 - "!**/*.ts"
 - "!**/*.map"
 asar: true
+# @resvg/resvg-js ships prebuilt per-platform native binaries (.node files).
+# Native addons cannot be loaded from inside an asar archive — they must be
+# unpacked to the filesystem. The glob below covers all platform-specific
+# @resvg scoped packages (e.g. @resvg/resvg-js-linux-x64-gnu).
+asarUnpack:
+- "node_modules/@resvg/**"
+- "node_modules/@laneflow/renderer/**"

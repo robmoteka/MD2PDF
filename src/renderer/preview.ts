@@ -1,10 +1,26 @@
 import MarkdownIt from 'markdown-it';
 import mermaid from 'mermaid';
+import type { LaneflowThemeIpc, LaneflowDirectionIpc } from '../shared/types';
+
+// ─── LaneFlow placeholder types ───────────────────────────────────────────────
+
+interface LaneflowPending {
+  id: number;
+  source: string;
+  direction?: LaneflowDirectionIpc;
+}
+
+// ─── Preview class ────────────────────────────────────────────────────────────
 
 export class MarkdownPreview {
   private container: HTMLElement;
   private md: MarkdownIt;
   private mermaidInitialized = false;
+  private isDark = false;
+
+  // LaneFlow state — reset on each render()
+  private laneflowPending: LaneflowPending[] = [];
+  private laneflowCounter = 0;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -15,22 +31,42 @@ export class MarkdownPreview {
       breaks: false,
     });
 
-    // Override fence renderer to handle mermaid blocks
+    // Override fence renderer to handle mermaid and laneflow blocks
     const defaultFence = this.md.renderer.rules.fence!.bind(this.md.renderer.rules);
     this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx];
-      if (token.info.trim().toLowerCase() === 'mermaid') {
+      const info = token.info.trim();
+      const lang = info.split(/\s+/)[0].toLowerCase();
+
+      if (lang === 'mermaid') {
         const id = `mermaid-${idx}-${Date.now()}`;
         return `<div class="mermaid-container"><pre class="mermaid" id="${id}">${this.escapeHtml(token.content)}</pre></div>`;
       }
+
+      if (lang === 'laneflow') {
+        const id = this.laneflowCounter++;
+        const direction = this.parseLaneflowDirection(info);
+        this.laneflowPending.push({ id, source: token.content, direction });
+        return `<div class="laneflow-placeholder" data-laneflow-id="${id}"></div>`;
+      }
+
       return defaultFence(tokens, idx, options, env, self);
     };
   }
 
   async render(markdownText: string): Promise<void> {
+    // Reset laneflow state before each render
+    this.laneflowPending = [];
+    this.laneflowCounter = 0;
+
     const html = this.md.render(markdownText);
     this.container.innerHTML = html;
-    await this.renderMermaidDiagrams();
+
+    // Run both diagram passes concurrently
+    await Promise.all([
+      this.renderMermaidDiagrams(),
+      this.renderLaneflowDiagrams(),
+    ]);
   }
 
   getRenderedHtml(): string {
@@ -38,9 +74,8 @@ export class MarkdownPreview {
   }
 
   /**
-   * Zwraca HTML przygotowany do eksportu PDF.
-   * Przed każdym nagłówkiem, który poprzedza diagram Mermaid,
-   * wstawia znacznik page-break (widoczny tylko w CSS PDF).
+   * Returns HTML prepared for PDF export.
+   * Inserts page-break markers before headings that precede diagrams.
    */
   getPdfHtml(): string {
     this.insertDiagramPageBreaks();
@@ -50,9 +85,8 @@ export class MarkdownPreview {
   }
 
   private insertDiagramPageBreaks(): void {
-    const containers = this.container.querySelectorAll('.mermaid-container');
+    const containers = this.container.querySelectorAll('.mermaid-container, .laneflow-rendered');
     for (const container of containers) {
-      // Idź wstecz po rodzeństwie, znajdź najbliższy nagłówek
       let sibling = container.previousElementSibling;
       let nearestHeading: Element | null = null;
       while (sibling) {
@@ -82,7 +116,6 @@ export class MarkdownPreview {
     return {
       startOnLoad: false,
       theme: dark ? 'dark' : 'default',
-      // Override default yellow (#ffffde) subgraph fills with light gray
       themeVariables: dark
         ? {}
         : {
@@ -94,9 +127,7 @@ export class MarkdownPreview {
       flowchart: {
         useMaxWidth: true,
         htmlLabels: true,
-        // Wider wrap threshold — prevents narrow nodes from clipping long labels
         wrappingWidth: 400,
-        // Extra padding so node borders never overlap label text
         padding: 24,
         nodeSpacing: 50,
         rankSpacing: 60,
@@ -109,14 +140,12 @@ export class MarkdownPreview {
     if (mermaidBlocks.length === 0) return;
 
     if (!this.mermaidInitialized) {
-      mermaid.initialize(this.buildMermaidConfig(false));
+      mermaid.initialize(this.buildMermaidConfig(this.isDark));
       this.mermaidInitialized = true;
     }
 
     for (const block of mermaidBlocks) {
       const pre = block as HTMLElement;
-      // Replace literal \n escape sequences with <br/> so Mermaid renders them
-      // as line breaks in labels (both flowchart nodes and sequence messages).
       const code = (pre.textContent || '').replace(/\\n/g, '<br/>');
       const id = pre.id || `mermaid-${Date.now()}`;
 
@@ -134,7 +163,40 @@ export class MarkdownPreview {
     }
   }
 
+  /**
+   * Async pass: replaces all laneflow placeholder divs with SVG rendered
+   * in the main process via IPC. All diagrams are requested concurrently.
+   */
+  private async renderLaneflowDiagrams(): Promise<void> {
+    const pending = this.laneflowPending;
+    if (pending.length === 0) return;
+
+    const theme: LaneflowThemeIpc = this.isDark ? 'dark' : 'light';
+
+    // Fire all IPC calls concurrently, then apply results
+    const results = await Promise.all(
+      pending.map(async p => {
+        const { html } = await window.api.renderLaneflow({
+          source: p.source,
+          theme,
+          direction: p.direction,
+        });
+        return { id: p.id, html };
+      }),
+    );
+
+    for (const { id, html } of results) {
+      const placeholder = this.container.querySelector(
+        `[data-laneflow-id="${id}"]`,
+      ) as HTMLElement | null;
+      if (placeholder) {
+        placeholder.outerHTML = html;
+      }
+    }
+  }
+
   setTheme(dark: boolean): void {
+    this.isDark = dark;
     this.mermaidInitialized = false;
     mermaid.initialize(this.buildMermaidConfig(dark));
     this.mermaidInitialized = true;
@@ -149,11 +211,9 @@ export class MarkdownPreview {
     const svgEl = wrapper.querySelector('svg');
     if (!svgEl) return;
 
-    // Remove Mermaid's inline overflow restriction
     svgEl.removeAttribute('overflow');
     svgEl.style.overflow = 'visible';
 
-    // Expand viewBox so labels outside the original bounds become visible
     const vb = svgEl.getAttribute('viewBox');
     if (!vb) return;
 
@@ -161,11 +221,10 @@ export class MarkdownPreview {
     if (parts.length !== 4 || parts.some(isNaN)) return;
 
     const [x, y, w, h] = parts;
-    const padX = 20;  // horizontal margin (px in SVG user units)
-    const padY = 50;  // vertical margin — edge labels need more room above/below
+    const padX = 20;
+    const padY = 50;
 
     svgEl.setAttribute('viewBox', `${x - padX} ${y - padY} ${w + 2 * padX} ${h + 2 * padY}`);
-    // Keep the rendered width unchanged; height scales proportionally via CSS
     svgEl.style.width = '100%';
     svgEl.style.height = 'auto';
   }
@@ -176,5 +235,18 @@ export class MarkdownPreview {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Extract direction token from a laneflow fence info-string.
+   * "laneflow LR" → 'LR', "laneflow TB" → 'TB', "laneflow" → undefined
+   */
+  private parseLaneflowDirection(info: string): LaneflowDirectionIpc | undefined {
+    const tokens = info.trim().split(/\s+/).slice(1);
+    for (const token of tokens) {
+      const upper = token.toUpperCase();
+      if (upper === 'LR' || upper === 'TB') return upper as LaneflowDirectionIpc;
+    }
+    return undefined;
   }
 }

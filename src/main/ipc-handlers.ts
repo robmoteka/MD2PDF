@@ -2,13 +2,14 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exportPdf } from './pdf-export';
-import { FileResult, ExportAllItem, ExportAllResult } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 import {
   getLastOpenDir,
   setLastOpenDir,
   getLastSaveDir,
   setLastSaveDir,
 } from './settings';
+import { renderLaneflowFence } from '../shared/laneflow';
 
 export function registerIpcHandlers(win: BrowserWindow): void {
   // --- File watchers ---
@@ -210,4 +211,16 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('app:title', async (_event, title: string): Promise<void> => {
     win.setTitle(title);
   });
+
+  // --- LaneFlow render (Node-side, SVG returned as HTML snippet) ---
+  ipcMain.handle(
+    'laneflow:render',
+    async (_event, req: LaneflowRenderRequest): Promise<LaneflowRenderResponse> => {
+      const html = await renderLaneflowFence(req.source, {
+        theme: req.theme,
+        direction: req.direction,
+      });
+      return { html };
+    },
+  );
 }
