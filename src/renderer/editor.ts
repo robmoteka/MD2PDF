@@ -56,6 +56,16 @@ export class MarkdownEditor {
     return { line: line.number, col: pos - line.from + 1 };
   }
 
+  insertAtCursor(text: string): void {
+    const { state } = this.view;
+    const pos = state.selection.main.head;
+    this.view.dispatch({
+      changes: { from: pos, insert: text },
+      selection: { anchor: pos + text.length },
+    });
+    this.view.focus();
+  }
+
   focus(): void {
     this.view.focus();
   }

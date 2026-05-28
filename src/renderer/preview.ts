@@ -59,7 +59,8 @@ export class MarkdownPreview {
     this.laneflowPending = [];
     this.laneflowCounter = 0;
 
-    const html = this.md.render(markdownText);
+    const html = this.md.render(markdownText)
+      .replace(/<!--\s*pagebreak\s*-->/gi, '<div class="pdf-page-break"></div>');
     this.container.innerHTML = html;
 
     // Run both diagram passes concurrently
@@ -73,39 +74,8 @@ export class MarkdownPreview {
     return this.container.innerHTML;
   }
 
-  /**
-   * Returns HTML prepared for PDF export.
-   * Inserts page-break markers before headings that precede diagrams.
-   */
   getPdfHtml(): string {
-    this.insertDiagramPageBreaks();
-    const html = this.container.innerHTML;
-    this.removeDiagramPageBreaks();
-    return html;
-  }
-
-  private insertDiagramPageBreaks(): void {
-    const containers = this.container.querySelectorAll('.mermaid-container, .laneflow-rendered');
-    for (const container of containers) {
-      let sibling = container.previousElementSibling;
-      let nearestHeading: Element | null = null;
-      while (sibling) {
-        if (/^H[1-6]$/.test(sibling.tagName)) {
-          nearestHeading = sibling;
-          break;
-        }
-        sibling = sibling.previousElementSibling;
-      }
-      if (nearestHeading) {
-        const pageBreak = document.createElement('div');
-        pageBreak.className = 'diagram-page-break';
-        nearestHeading.parentNode!.insertBefore(pageBreak, nearestHeading);
-      }
-    }
-  }
-
-  private removeDiagramPageBreaks(): void {
-    this.container.querySelectorAll('.diagram-page-break').forEach(el => el.remove());
+    return this.container.innerHTML;
   }
 
   renderToHtml(markdownText: string): string {

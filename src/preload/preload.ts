@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { FileResult, ExportAllItem, ExportAllResult, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, PdfOptions, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 
 contextBridge.exposeInMainWorld('api', {
   // File operations
@@ -10,10 +10,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('file:save-as', content),
 
   // PDF export
-  exportPdf: (html: string, css: string): Promise<string | null> =>
-    ipcRenderer.invoke('pdf:export', html, css),
-  exportAllPdf: (items: ExportAllItem[]): Promise<ExportAllResult[] | null> =>
-    ipcRenderer.invoke('pdf:export-all', items),
+  exportPdf: (html: string, css: string, options: PdfOptions): Promise<string | null> =>
+    ipcRenderer.invoke('pdf:export', html, css, options),
+  exportAllPdf: (items: ExportAllItem[], options: PdfOptions): Promise<ExportAllResult[] | null> =>
+    ipcRenderer.invoke('pdf:export-all', items, options),
 
   // Window
   setTitle: (title: string): Promise<void> => ipcRenderer.invoke('app:title', title),

@@ -223,3 +223,25 @@
 #preview-content input[type="checkbox"] {
   margin-right: 6px;
 }
+
+/* Ręczny podział strony — widoczny w podglądzie jako linia z etykietą */
+#preview-content .pdf-page-break {
+  position: relative;
+  margin: 20px 0;
+  border-top: 1px dashed var(--border, #ccc);
+  height: 0;
+  user-select: none;
+}
+#preview-content .pdf-page-break::before {
+  content: 'nowa strona';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg, #fff);
+  padding: 0 10px;
+  font-size: 10px;
+  color: var(--text-muted, #aaa);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

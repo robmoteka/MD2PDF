@@ -1,7 +1,7 @@
 import { MarkdownEditor } from './editor';
 import { MarkdownPreview } from './preview';
 import { TabManager, Tab } from './tabs';
-import { MenuAction } from '../shared/types';
+import { MenuAction, PdfOptions } from '../shared/types';
 
 // --- State ---
 const tabs = new TabManager();
@@ -22,6 +22,7 @@ const btnExportAll = document.getElementById('btn-export-all')!;
 const btnTheme = document.getElementById('btn-theme')!;
 const splitter = document.getElementById('splitter')!;
 const tabListEl = document.getElementById('tab-list')!;
+const btnPageBreak = document.getElementById('btn-page-break')!;
 const btnNewTab = document.getElementById('btn-new-tab')!;
 
 // --- Components ---
@@ -216,6 +217,12 @@ async function actionExportAll(): Promise<void> {
     return;
   }
 
+  const options = await showPdfSettingsDialog();
+  if (!options) {
+    setStatus('Anulowano eksport');
+    return;
+  }
+
   setStatus(`Renderowanie ${exportable.length} pliku/plików…`);
 
   const css = await loadPdfCss();
@@ -237,7 +244,7 @@ async function actionExportAll(): Promise<void> {
     await preview.render(activeTab.doc.content);
   }
 
-  const results = await window.api.exportAllPdf(items);
+  const results = await window.api.exportAllPdf(items, options);
 
   if (results === null) {
     setStatus('Anulowano eksport');
@@ -255,14 +262,56 @@ async function actionExportAll(): Promise<void> {
   }
 }
 
+function showPdfSettingsDialog(): Promise<PdfOptions | null> {
+  return new Promise((resolve) => {
+    const dlg = document.getElementById('pdf-settings-dialog') as HTMLDialogElement;
+    const confirmBtn = document.getElementById('pdf-settings-confirm')!;
+    const cancelBtn = document.getElementById('pdf-settings-cancel')!;
+
+    const finish = (result: PdfOptions | null) => {
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+      dlg.removeEventListener('cancel', onCancel);
+      dlg.close();
+      resolve(result);
+    };
+
+    const onConfirm = () => {
+      const size = (document.querySelector('input[name="pdf-page-size"]:checked') as HTMLInputElement).value as 'A4' | 'A3';
+      const orientation = (document.querySelector('input[name="pdf-orientation"]:checked') as HTMLInputElement).value;
+      finish({
+        pageSize: size,
+        landscape: orientation === 'landscape',
+        marginTop: 0.39,
+        marginBottom: 0.39,
+        marginLeft: 0.39,
+        marginRight: 0.39,
+      });
+    };
+
+    const onCancel = () => finish(null);
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+    dlg.addEventListener('cancel', onCancel);
+    dlg.showModal();
+  });
+}
+
 async function actionExportPdf(): Promise<void> {
   const doc = tabs.activeDoc;
   if (!doc) return;
 
+  const options = await showPdfSettingsDialog();
+  if (!options) {
+    setStatus('Anulowano eksport PDF');
+    return;
+  }
+
   setStatus('Eksportowanie PDF...');
   const html = preview.getPdfHtml();
   const css = await loadPdfCss();
-  const result = await window.api.exportPdf(html, css);
+  const result = await window.api.exportPdf(html, css, options);
   if (result) {
     setStatus(`PDF zapisany: ${result.split('/').pop()}`);
   } else {
@@ -347,6 +396,7 @@ btnSave.addEventListener('click', actionSave);
 btnExport.addEventListener('click', actionExportPdf);
 btnExportAll.addEventListener('click', actionExportAll);
 btnTheme.addEventListener('click', actionToggleTheme);
+btnPageBreak.addEventListener('click', () => editor.insertAtCursor('\n\n<!-- pagebreak -->\n\n'));
 btnNewTab.addEventListener('click', actionNew);
 
 // --- Splitter drag ---

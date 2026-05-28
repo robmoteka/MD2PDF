@@ -18,6 +18,7 @@
       <button id="btn-save" title="Zapisz (Ctrl+S)">💾 Zapisz</button>
       <button id="btn-export" title="Eksport PDF (Ctrl+E)">📄 PDF</button>
       <button id="btn-export-all" title="Eksportuj wszystkie otwarte pliki do PDF">📦 Eksportuj wszystkie</button>
+      <button id="btn-page-break" title="Wstaw podział strony w miejscu kursora">&#x2015; Podział str.</button>
       <button id="btn-theme" title="Przełącz motyw (Ctrl+T)">🌓 Motyw</button>
     </div>
   </div>
@@ -36,6 +37,27 @@
     <span id="status-message">Gotowy</span>
     <span id="cursor-position">Ln 1, Col 1</span>
   </div>
+  <dialog id="pdf-settings-dialog">
+    <h3>Ustawienia eksportu PDF</h3>
+    <div class="pdf-settings-section">
+      <span class="pdf-settings-label">Format strony</span>
+      <div class="pdf-settings-options">
+        <label><input type="radio" name="pdf-page-size" value="A4" checked> A4</label>
+        <label><input type="radio" name="pdf-page-size" value="A3"> A3</label>
+      </div>
+    </div>
+    <div class="pdf-settings-section">
+      <span class="pdf-settings-label">Orientacja</span>
+      <div class="pdf-settings-options">
+        <label><input type="radio" name="pdf-orientation" value="portrait" checked> Pionowa</label>
+        <label><input type="radio" name="pdf-orientation" value="landscape"> Pozioma</label>
+      </div>
+    </div>
+    <div class="pdf-settings-actions">
+      <button id="pdf-settings-cancel">Anuluj</button>
+      <button id="pdf-settings-confirm" class="primary">Eksportuj</button>
+    </div>
+  </dialog>
   <script src="../../dist/renderer/renderer.js"></script>
 </body>
 </html>

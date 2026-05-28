@@ -10,7 +10,7 @@
 }
 
 .pdf-body h1 { font-size: 1.8em; border-bottom: 2px solid #ddd; padding-bottom: 0.3em; }
-.pdf-body h2 { font-size: 1.4em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; break-before: page; page-break-before: always; }
+.pdf-body h2 { font-size: 1.4em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; }
 .pdf-body h3 { font-size: 1.2em; }
 
 .pdf-body pre {
@@ -55,17 +55,23 @@
 
 .pdf-body img {
   max-width: 100%;
+  width: auto;
   height: auto;
+}
+
+.pdf-body .mermaid-container {
+  margin: 1em 0;
 }
 
 .pdf-body .mermaid-rendered {
   text-align: center;
-  page-break-inside: avoid;
   margin: 1em 0;
 }
 
 .pdf-body .mermaid-rendered svg {
   max-width: 100%;
+  width: 100%;
+  height: auto;
   overflow: visible !important;
   display: block;
   margin: 0 auto;
@@ -85,8 +91,8 @@
   page-break-inside: avoid;
 }
 
-/* Page break przed sekcją z diagramem Mermaid lub LaneFlow */
-.diagram-page-break {
+/* Ręczny podział strony wstawiany przez użytkownika (<!-- pagebreak -->) */
+.pdf-page-break {
   break-before: page;
   page-break-before: always;
 }
@@ -94,12 +100,12 @@
 /* --- LaneFlow --- */
 .pdf-body .laneflow-rendered {
   text-align: center;
-  page-break-inside: avoid;
   margin: 1em 0;
 }
 
 .pdf-body .laneflow-rendered svg {
   max-width: 100%;
+  width: 100%;
   height: auto;
   display: block;
   margin: 0 auto;

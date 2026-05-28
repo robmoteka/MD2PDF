@@ -2,7 +2,7 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exportPdf } from './pdf-export';
-import { FileResult, ExportAllItem, ExportAllResult, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, PdfOptions, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 import {
   getLastOpenDir,
   setLastOpenDir,
@@ -145,7 +145,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   });
 
   // --- Export PDF ---
-  ipcMain.handle('pdf:export', async (_event, html: string, css: string): Promise<string | null> => {
+  ipcMain.handle('pdf:export', async (_event, html: string, css: string, options: PdfOptions): Promise<string | null> => {
     focusForDialog();
 
     const lastDir = getLastSaveDir();
@@ -159,7 +159,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     }
 
     try {
-      await exportPdf(html, css, result.filePath);
+      await exportPdf(html, css, result.filePath, options);
       setLastSaveDir(path.dirname(result.filePath));
       return result.filePath;
     } catch (err) {
@@ -171,6 +171,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('pdf:export-all', async (
     _event,
     items: ExportAllItem[],
+    options: PdfOptions,
   ): Promise<ExportAllResult[] | null> => {
     if (!items || items.length === 0) return [];
 
@@ -194,7 +195,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     for (const item of items) {
       const outputPath = path.join(outputDir, `${item.baseName}.pdf`);
       try {
-        await exportPdf(item.html, item.css, outputPath);
+        await exportPdf(item.html, item.css, outputPath, options);
         results.push({ baseName: item.baseName, success: true, outputPath });
       } catch (err) {
         results.push({

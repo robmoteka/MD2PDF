@@ -1,4 +1,4 @@
-import { FileResult, ExportAllItem, ExportAllResult, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
+import { FileResult, ExportAllItem, ExportAllResult, PdfOptions, MenuAction, LaneflowRenderRequest, LaneflowRenderResponse } from '../shared/types';
 
 declare global {
   interface Window {
@@ -6,8 +6,8 @@ declare global {
       openFile: () => Promise<FileResult[]>;
       saveFile: (filePath: string, content: string) => Promise<string | null>;
       saveFileAs: (content: string) => Promise<string | null>;
-      exportPdf: (html: string, css: string) => Promise<string | null>;
-      exportAllPdf: (items: ExportAllItem[]) => Promise<ExportAllResult[] | null>;
+      exportPdf: (html: string, css: string, options: PdfOptions) => Promise<string | null>;
+      exportAllPdf: (items: ExportAllItem[], options: PdfOptions) => Promise<ExportAllResult[] | null>;
       setTitle: (title: string) => Promise<void>;
       onMenuAction: (callback: (action: MenuAction) => void) => void;
       // File watching (auto-reload)
